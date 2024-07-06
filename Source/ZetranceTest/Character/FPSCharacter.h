@@ -15,11 +15,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	class UPhysicsHandleComponent* Grab;
 
-	UPROPERTY()
-	FTransform GrabTransform;
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* GrabArrow;
 
 
 public:	

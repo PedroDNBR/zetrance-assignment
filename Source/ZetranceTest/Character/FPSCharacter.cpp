@@ -1,8 +1,11 @@
 #include "FPSCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "Components/ArrowComponent.h"
 #include "ZetranceTest/Microwave/Microwave.h"
+#include "ZetranceTest/Microwave/MicrowaveButtonBox.h"
 #include "ZetranceTest/Microwave/Grabbable.h"
+#include "Components/BoxComponent.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -10,6 +13,11 @@ AFPSCharacter::AFPSCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent);
+
+	Grab = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("GrabComponent"));
+
+	GrabArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("GrabArrow"));
+	GrabArrow->SetupAttachment(Camera);
 
 	Camera->bUsePawnControlRotation = true;
 }
@@ -53,7 +61,10 @@ void AFPSCharacter::Hold()
 void AFPSCharacter::Drop()
 {
 	bIsHoldingSomething = false;
-	Grab->ReleaseComponent();
+	if (ensure(Grab != nullptr))
+	{
+		Grab->ReleaseComponent();
+	}
 }
 
 void AFPSCharacter::Interact()
@@ -71,40 +82,34 @@ void AFPSCharacter::Interact()
 		HitResult,        //result
 		TraceStart,    //start
 		TraceEnd, //end
-		ECC_Visibility //collision channel
+		ECC_WorldDynamic //collision channel
 	);
+
 
 	if (HitResult.bBlockingHit)
 	{
-		AMicrowave* Microwave = Cast<AMicrowave>(HitResult.GetActor());
-		if (Microwave)
+		UMicrowaveButtonBox* MicrowaveButton = Cast<UMicrowaveButtonBox>(HitResult.GetComponent());
+		if (MicrowaveButton)
 		{
-			Microwave->RotateDoor(LookUpValue * 4);
-			bIsHoldingSomething = true;
-
-		}
-		else
-		{
-			bIsHoldingSomething = false;
-		}
-
-		AGrabbable* Grabbable = Cast<AGrabbable>(HitResult.GetActor());
-		if (Grabbable)
-		{
-			UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Grabbable);
-			if (Primitive)
+			if (GEngine)
 			{
-				Grab->GrabComponentAtLocationWithRotation(
-					Primitive,
-					"",
-					GrabTransform.GetLocation(),
-					GrabTransform.Rotator()
+				GEngine->AddOnScreenDebugMessage(
+					1,
+					3,
+					FColor::Green,
+					"Interact"
 				);
 			}
+			MicrowaveButton->Interact();
 		}
-		else
+		else 
 		{
-			bIsHoldingSomething = false;
+			AMicrowave* Microwave = Cast<AMicrowave>(HitResult.GetActor());
+			if (Microwave)
+			{
+				Microwave->RotateDoor(LookUpValue * 4);
+				bIsHoldingSomething = true;
+			}
 		}
 	}
 	else

@@ -25,10 +25,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:	
+private:	
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
+
+public:
+	FORCEINLINE UStaticMeshComponent* GetMesh() const { return Mesh; }
+
 
 };

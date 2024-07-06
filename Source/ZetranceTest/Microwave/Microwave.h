@@ -18,7 +18,23 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-private:	
+	int MaxPower = 100;
+	int MinPower = 40;
+
+	int CurrentPower;
+
+	int SavedPower;
+
+	int SecondsTimer = 0;
+	int MinutesTimer = 0;
+
+	bool bIsHeating = false;
+
+private:
+
+
+	FTimerHandle TimerHandle;
+
 	UPROPERTY(EditAnywhere)
 	int32 LightMaterialIndex = 2;
 
@@ -50,5 +66,41 @@ private:
 	class UPointLightComponent* MicrowaveLight;
 
 	void ToggleLight(bool bEnabled);
+
+	bool IsDoorOpen();
+
+
+
+	UFUNCTION()
+	void TurnOnMicrowave();
+
+	void Heat();
+
+	UFUNCTION()
+	void TurnOffMicrowave();
+
+	UFUNCTION()
+	void PauseMicrowave();
+
+	void SubtractSecondsFromTimer();
+	void StartSecondsTimer();
+
+	UFUNCTION()
+	void Stop();
+
+	void PauseTimer();
+
+	
+
+	/*
+	* Buttons 
+	*/
+	UPROPERTY(EditAnywhere)
+	class UMicrowaveButtonBox* StartButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* StopButton;
+
+	
 
 };
