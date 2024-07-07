@@ -21,22 +21,42 @@ protected:
 	int MaxPower = 100;
 	int MinPower = 40;
 
-	int CurrentPower;
+	int CurrentPower = 0;
 
-	int SavedPower;
+	int SavedPower = 100;
 
 	int SecondsTimer = 0;
-	int MinutesTimer = 0;
 
 	bool bIsHeating = false;
 
-private:
+	FString TimeToIntStringSequentiated(int Time);
 
+	int StringTimeToSeconds(FString TimeInString);
+
+private:
+	void SetNewClockTimeString(int NewNumber);
+	FString NewClockTimeString;
+	int NewClockTimeIndex = 0;
+
+	FDateTime ClockTime;
+
+
+	FTimerHandle ClockTimeHandle;
+
+	void PassSecond();
+
+	void SetPowerAndTimeAndStart(int Power, int Time);
+
+	bool bEditingTimer = false;
+
+	bool bEditingPower = false;
+
+	bool bEditingClock = false;
 
 	FTimerHandle TimerHandle;
 
 	UPROPERTY(EditAnywhere)
-	int32 LightMaterialIndex = 2;
+	int LightMaterialIndex = 2;
 
 	UPROPERTY(EditAnywhere)
 	class UMaterial* LightOnMaterial;
@@ -69,7 +89,7 @@ private:
 
 	bool IsDoorOpen();
 
-
+	void AddToSeconds(int Number);
 
 	UFUNCTION()
 	void TurnOnMicrowave();
@@ -90,7 +110,71 @@ private:
 
 	void PauseTimer();
 
-	
+	UFUNCTION()
+	void One();
+
+	UFUNCTION()
+	void Two();
+
+	UFUNCTION()
+	void Three();
+
+	UFUNCTION()
+	void Four();
+
+	UFUNCTION()
+	void Five();
+
+	UFUNCTION()
+	void Six();
+
+	UFUNCTION()
+	void Seven();
+
+	UFUNCTION()
+	void Eight();
+
+	UFUNCTION()
+	void Nine();
+
+	UFUNCTION()
+	void Zero();
+
+	UFUNCTION()
+	void MugCake();
+
+	UFUNCTION()
+	void MeltSoften();
+
+	UFUNCTION()
+	void ReheatPlate();
+
+	UFUNCTION()
+	void ReheatBeverage();
+
+	UFUNCTION()
+	void Potato();
+
+	UFUNCTION()
+	void Vegetables();
+
+	UFUNCTION()
+	void RiceQuinoa();
+
+	UFUNCTION()
+	void Pasta();
+
+	UFUNCTION()
+	void Meat();
+
+	UFUNCTION()
+	void PoultryFish();
+
+	UFUNCTION()
+	void PowerLevel();
+
+	UFUNCTION()
+	void SetClock();
 
 	/*
 	* Buttons 
@@ -101,6 +185,70 @@ private:
 	UPROPERTY(EditAnywhere)
 	UMicrowaveButtonBox* StopButton;
 
-	
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* OneButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* TwoButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* ThreeButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* FourButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* FiveButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* SixButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* SevenButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* EightButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* NineButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* ZeroButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* MugCakeButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* MeltSoftenButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* ReheatPlateButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* ReheatBeverageButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* PotatoButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* VegetablesButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* RiceQuinoaButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* PastaButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* MeatButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* PoultryFishButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* PowerLevelButton;
+
+	UPROPERTY(EditAnywhere)
+	UMicrowaveButtonBox* SetClockButton;
 
 };
