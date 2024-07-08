@@ -368,15 +368,6 @@ void AMicrowave::Heat()
 	ToggleLight(true);
 	if (ActorInTheMicrowave && ActorInTheMicrowave != nullptr)
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Green,
-				"AAAA"
-			);
-		}
 		ActorInTheMicrowave->PlayParticle();
 	}
 }
