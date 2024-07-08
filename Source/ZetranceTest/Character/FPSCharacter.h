@@ -18,17 +18,18 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class UPhysicsHandleComponent* Grab;
 
-	UPROPERTY(EditAnywhere)
-	class UArrowComponent* GrabArrow;
-
-
 public:	
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	const float TraceDistance = 160.f;
+	UPROPERTY(EditAnywhere)
+	float ItemDistanceToCamera = 60.f;
+
+	UPROPERTY(EditAnywhere)
+	float TraceDistance = 250.f;
+
 	const bool DrawDebugLine = true;
 
 	UPROPERTY(EditAnywhere)
@@ -51,4 +52,5 @@ private:
 	float LookUpValue = 0.f;
 
 	bool bIsHoldingSomething = false;
+	bool bLockCamera = false;
 };

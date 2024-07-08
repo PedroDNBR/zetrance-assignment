@@ -1,14 +1,16 @@
 #include "Microwave.h"
 #include "MicrowaveButtonBox.h"
-#include "MicrowaveScreenWidget.h"
+#include "Grabbable.h"
 #include "ScreenTimer.h"
 #include "Components/WidgetComponent.h"
 #include "Components/TextBlock.h"
 #include "Components/PointLightComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/AudioComponent.h"
 #include "Engine/TriggerBox.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Sound/SoundCue.h"
 
 AMicrowave::AMicrowave()
 {
@@ -147,6 +149,23 @@ AMicrowave::AMicrowave()
 	SetClockButton->SetupAttachment(RootComponent);
 	SetClockButton->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	SetClockButton->SetBoxExtent(FVector(.2f, 1.2f, .6f));
+
+	InsideMicrowaveCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("InsideMicrowaveCollision"));
+	InsideMicrowaveCollision->SetupAttachment(RootComponent);
+
+	MicrowaveLoopComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("MicrowaveLoopComponent"));
+}
+
+void AMicrowave::PlayBeep()
+{
+	if (MicrowaveBeep)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(),
+			MicrowaveBeep,
+			GetActorLocation()
+		);
+	}
 }
 
 void AMicrowave::BeginPlay()
@@ -191,7 +210,27 @@ void AMicrowave::BeginPlay()
 
 	PowerLevelButton->InteractDelegate.AddDynamic(this, &AMicrowave::PowerLevel);
 	SetClockButton->InteractDelegate.AddDynamic(this, &AMicrowave::SetClock);
-	
+
+	InsideMicrowaveCollision->OnComponentBeginOverlap.AddDynamic(this, &AMicrowave::SomethingInTheMicrowave);
+	InsideMicrowaveCollision->OnComponentEndOverlap.AddDynamic(this, &AMicrowave::SomethingExitedTheMicrowave);
+
+}
+
+void AMicrowave::SomethingInTheMicrowave(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AGrabbable* Grabbable = Cast<AGrabbable>(OtherActor);
+	if (Grabbable)
+	{
+		ActorInTheMicrowave = Grabbable;
+	}
+}
+
+void AMicrowave::SomethingExitedTheMicrowave(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (ActorInTheMicrowave != nullptr)
+	{
+		ActorInTheMicrowave = nullptr;
+	}
 }
 
 void AMicrowave::SetNewClockTimeString(int NewNumber)
@@ -224,6 +263,7 @@ void AMicrowave::PassSecond()
 
 void AMicrowave::SetPowerAndTimeAndStart(int Power, int Time)
 {
+	PlayBeep();
 	if (bIsHeating || IsDoorOpen() || SecondsTimer > 0) return;
 
 	SecondsTimer = Time;
@@ -254,6 +294,8 @@ bool AMicrowave::IsDoorOpen()
 
 void AMicrowave::TurnOnMicrowave()
 {
+	PlayBeep();
+
 	if (bEditingPower)
 	{
 		SavedPower = CurrentPower;
@@ -280,22 +322,6 @@ void AMicrowave::TurnOnMicrowave()
 
 		if (newHour > 12 || newMinute > 59)
 		{
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.f,
-					FColor::Green,
-					FString::Printf(TEXT("%i"), newMinute)
-				);
-
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.f,
-					FColor::Green,
-					FString::Printf(TEXT("%i"), newHour)
-				);
-			}
 			SetNewClockTimeString(-1);
 			bEditingClock = false;
 			return;
@@ -324,6 +350,13 @@ void AMicrowave::TurnOnMicrowave()
 	{
 		SecondsTimer += 30;
 	}
+	bEditingTimer = true;
+	if (MicrowaveLoopComponent && MicrowaveLoop)
+	{
+		MicrowaveLoopComponent->SetSound(MicrowaveLoop);
+		MicrowaveLoopComponent->Play();
+	}
+
 	Heat();
 
 	StartSecondsTimer();
@@ -333,6 +366,19 @@ void AMicrowave::Heat()
 {
 	bIsHeating = true;
 	ToggleLight(true);
+	if (ActorInTheMicrowave && ActorInTheMicrowave != nullptr)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Green,
+				"AAAA"
+			);
+		}
+		ActorInTheMicrowave->PlayParticle();
+	}
 }
 
 void AMicrowave::TurnOffMicrowave()
@@ -340,16 +386,23 @@ void AMicrowave::TurnOffMicrowave()
 	bIsHeating = false;
 	SecondsTimer = 0;
 	CurrentPower = SavedPower;
+	if (MicrowaveLoopComponent && MicrowaveLoop)
+	{
+		MicrowaveLoopComponent->Stop();
+	}
 	if (IsDoorOpen()) return;
 	ToggleLight(false);
 }
 
 void AMicrowave::PauseMicrowave()
 {
+	if (MicrowaveLoopComponent && MicrowaveLoop)
+	{
+		MicrowaveLoopComponent->Stop();
+	}
 	bIsHeating = false;
 	PauseTimer();
 	ToggleLight(false);
-
 }
 
 void AMicrowave::SubtractSecondsFromTimer()
@@ -358,6 +411,14 @@ void AMicrowave::SubtractSecondsFromTimer()
 	if (SecondsTimer <= 0)
 	{
 		TurnOffMicrowave();
+		if (MicrowaveFinishBeep)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				GetWorld(),
+				MicrowaveFinishBeep,
+				GetActorLocation()
+			);
+		}
 	}
 	else
 	{
@@ -377,6 +438,7 @@ void AMicrowave::StartSecondsTimer()
 
 void AMicrowave::Stop()
 {
+	PlayBeep();
 	if (bEditingTimer)
 	{
 		bEditingTimer = false;
@@ -440,6 +502,7 @@ int AMicrowave::StringTimeToSeconds(FString TimeInString)
 
 void AMicrowave::AddToSeconds(int Number)
 {
+	PlayBeep();
 	if (bEditingClock) 
 	{
 		SetNewClockTimeString(Number);
@@ -581,6 +644,7 @@ void AMicrowave::PoultryFish()
 
 void AMicrowave::PowerLevel()
 {
+	PlayBeep();
 	if (SecondsTimer > 0 || bIsHeating || bEditingClock) return;
 
 	bEditingTimer = false;
@@ -590,6 +654,7 @@ void AMicrowave::PowerLevel()
 
 void AMicrowave::SetClock()
 {
+	PlayBeep();
 	if (bEditingClock || SecondsTimer > 0 || bIsHeating || bEditingPower) return;
 
 	NewClockTimeIndex = 0;
@@ -611,6 +676,11 @@ void AMicrowave::Tick(float DeltaTime)
 		MicrowavePlate->SetRelativeRotation(
 			FRotator(0, MicrowavePlate->GetRelativeRotation().Yaw + (10 * DeltaTime), 0)
 		);
+
+		if (ActorInTheMicrowave && ActorInTheMicrowave != nullptr)
+		{
+			ActorInTheMicrowave->PlayParticle();
+		}
 	}
 
 	if (bEditingPower)

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/ArrowComponent.h"
 #include "Grabbable.generated.h"
 
 UENUM(BlueprintType)
@@ -19,8 +20,22 @@ class ZETRANCETEST_API AGrabbable : public AActor
 	
 public:	
 	AGrabbable();
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EType Type;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystem* Particle;
+
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* ParticlePosition;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* SoundEffect;
+
+
+	UFUNCTION()
+	void PlayParticle();
 
 protected:
 	virtual void BeginPlay() override;

@@ -16,9 +16,6 @@ AFPSCharacter::AFPSCharacter()
 
 	Grab = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("GrabComponent"));
 
-	GrabArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("GrabArrow"));
-	GrabArrow->SetupAttachment(Camera);
-
 	Camera->bUsePawnControlRotation = true;
 }
 
@@ -42,14 +39,14 @@ void AFPSCharacter::MoveRight(float InputValue)
 
 void AFPSCharacter::Turn(float InputValue)
 {
-	if (bIsHoldingSomething) return;
+	if (bLockCamera) return;
 	AddControllerYawInput(InputValue * MouseSensibilityMultiplier);
 }
 
 void AFPSCharacter::LookUp(float InputValue)
 {
 	LookUpValue = InputValue;
-	if (bIsHoldingSomething) return;
+	if (bLockCamera) return;
 	AddControllerPitchInput(InputValue * MouseSensibilityMultiplier);
 }
 
@@ -60,10 +57,18 @@ void AFPSCharacter::Hold()
 
 void AFPSCharacter::Drop()
 {
-	bIsHoldingSomething = false;
-	if (ensure(Grab != nullptr))
+	if (bIsHoldingSomething)
 	{
-		Grab->ReleaseComponent();
+		if (ensure(Grab != nullptr))
+		{
+			Grab->ReleaseComponent();
+			bIsHoldingSomething = false;
+		}
+	}
+	
+	if (bLockCamera)
+	{
+		bLockCamera = false;
 	}
 }
 
@@ -91,30 +96,35 @@ void AFPSCharacter::Interact()
 		UMicrowaveButtonBox* MicrowaveButton = Cast<UMicrowaveButtonBox>(HitResult.GetComponent());
 		if (MicrowaveButton)
 		{
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					1,
-					3,
-					FColor::Green,
-					"Interact"
-				);
-			}
 			MicrowaveButton->Interact();
+			return;
 		}
-		else 
+
+		AGrabbable* GrabbableItem = Cast<AGrabbable>(HitResult.GetActor());
+		if (GrabbableItem)
 		{
-			AMicrowave* Microwave = Cast<AMicrowave>(HitResult.GetActor());
-			if (Microwave)
-			{
-				Microwave->RotateDoor(LookUpValue * 4);
-				bIsHoldingSomething = true;
-			}
+			Grab->GrabComponentAtLocationWithRotation(
+				HitResult.GetComponent(),
+				NAME_None,
+				HitResult.GetComponent()->GetComponentLocation(),
+				HitResult.GetComponent()->GetComponentRotation()
+			);
+			bIsHoldingSomething = true;
+			return;
+		}
+		
+		AMicrowave* Microwave = Cast<AMicrowave>(HitResult.GetActor());
+		if (Microwave)
+		{
+			Microwave->RotateDoor(LookUpValue * 4);
+			bLockCamera = true;
+			return;
 		}
 	}
 	else
 	{
 		bIsHoldingSomething = false;
+		bLockCamera = false;
 	}
 }
 
@@ -123,6 +133,19 @@ void AFPSCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (bIsHoldingSomething)
+	{
+		FVector CameraLocation = Camera->GetComponentLocation();
+		FQuat CameraRotation = Camera->GetComponentQuat();
+
+		FVector NewGrabLocation = FVector(
+			CameraLocation + (CameraRotation.GetForwardVector() * ItemDistanceToCamera)
+		);
+
+		Grab->SetTargetLocation(NewGrabLocation);
+	}
+	
+
+	if (bLockCamera)
 	{
 		Interact();
 	}
